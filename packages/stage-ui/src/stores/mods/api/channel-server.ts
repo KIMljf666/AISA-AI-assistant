@@ -37,6 +37,10 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
     'ui:configure',
   ]
 
+  // 🆕 Phase 8: 限制重连次数 + 节流日志，避免控制台刷屏和内存泄漏
+  let lastErrorLogTime = 0
+  const ERROR_LOG_THROTTLE_MS = 30_000  // 30 秒内同一错误只打印一次
+
   async function initialize(options?: { token?: string, possibleEvents?: Array<keyof WebSocketEvents> }) {
     if (connected.value && client.value)
       return Promise.resolve()
@@ -54,6 +58,7 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
         url: websocketUrl.value || defaultWebSocketUrl,
         token: options?.token,
         possibleEvents,
+        maxReconnectAttempts: 5,  // 🆕 限制最多重试 5 次 (指数退避: 1s→2s→4s→8s→16s)
         onAnyMessage: (event) => {
           useWebSocketInspectorStore().add('incoming', event)
         },
@@ -65,14 +70,23 @@ export const useModsServerChannelStore = defineStore('mods:channels:proj-airi:se
           initializing.value = null
           clearListeners()
 
-          console.warn('WebSocket server connection error:', error)
+          // 🆕 节流日志: 30秒内只打印一次
+          const now = Date.now()
+          if (now - lastErrorLogTime > ERROR_LOG_THROTTLE_MS) {
+            console.warn('WebSocket server connection error (subsequent errors throttled for 30s):', error)
+            lastErrorLogTime = now
+          }
         },
         onClose: () => {
           connected.value = false
           initializing.value = null
           clearListeners()
 
-          console.warn('WebSocket server connection closed')
+          const now = Date.now()
+          if (now - lastErrorLogTime > ERROR_LOG_THROTTLE_MS) {
+            console.warn('WebSocket server connection closed')
+            lastErrorLogTime = now
+          }
         },
       })
 

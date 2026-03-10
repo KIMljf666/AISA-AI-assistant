@@ -362,13 +362,47 @@ function startLipSyncLoop() {
   if (lipSyncLoopId.value)
     return
 
+  // Smoothed mouth value for natural movement
+  let smoothedMouth = 0
+  let debugFrame = 0
+
   const tick = () => {
-    if (!nowSpeaking.value || !live2dLipSync.value) {
+    debugFrame++
+    if (!nowSpeaking.value) {
+      smoothedMouth = 0
       mouthOpenSize.value = 0
     }
-    else {
+    else if (live2dLipSync.value) {
+      // Primary: WASM-based lip sync
       mouthOpenSize.value = live2dLipSync.value.getMouthOpen()
+      if (debugFrame % 60 === 0) console.debug('[LipSync] WASM path, mouthOpen:', mouthOpenSize.value)
     }
+    else if (audioAnalyser.value) {
+      // Fallback: volume-based lip sync (speech-frequency focused)
+      const dataBuffer = new Uint8Array(audioAnalyser.value.frequencyBinCount)
+      audioAnalyser.value.getByteFrequencyData(dataBuffer)
+      // Wide speech frequency range (bins 1-60 ≈ 100Hz-4kHz)
+      const speechBins = dataBuffer.slice(1, 60)
+      // RMS for smoother energy
+      const rms = Math.sqrt(speechBins.reduce((acc, v) => acc + v * v, 0) / speechBins.length) / 255
+      // Lower power curve + very high amplification for visible movement
+      const target = Math.min(1, (rms ** 1.2) * 15)
+      // Smooth interpolation (very fast open, moderate close)
+      const lerpUp = 0.7
+      const lerpDown = 0.3
+      smoothedMouth += (target - smoothedMouth) * (target > smoothedMouth ? lerpUp : lerpDown)
+      mouthOpenSize.value = smoothedMouth
+      if (debugFrame % 60 === 0) console.debug('[LipSync] Fallback path, rms:', rms.toFixed(4), 'target:', target.toFixed(4), 'mouth:', smoothedMouth.toFixed(4))
+    }
+    else {
+      if (debugFrame % 120 === 0) console.debug('[LipSync] No analyser available! nowSpeaking:', nowSpeaking.value, 'analyser:', !!audioAnalyser.value, 'wasm:', !!live2dLipSync.value)
+      mouthOpenSize.value = 0
+    }
+
+    if (debugFrame % 120 === 0 && nowSpeaking.value) {
+      console.debug('[LipSync] Status: speaking=', nowSpeaking.value, 'mouth=', mouthOpenSize.value.toFixed(4), 'wasm=', !!live2dLipSync.value, 'analyser=', !!audioAnalyser.value)
+    }
+
     lipSyncLoopId.value = requestAnimationFrame(tick)
   }
 
@@ -379,23 +413,33 @@ async function setupLipSync() {
   if (lipSyncStarted.value)
     return
 
+  // Always ensure analyser is ready (needed for fallback lip sync)
+  setupAnalyser()
+  console.info('[Stage] 🎙️ setupLipSync called, analyser:', !!audioAnalyser.value)
+
   try {
     const lipSync = await createLive2DLipSync(audioContext, wlipsyncProfile as Profile, live2dLipSyncOptions)
     live2dLipSync.value = lipSync
     lipSyncNode.value = lipSync.node
     await audioContext.resume()
-    startLipSyncLoop()
-    lipSyncStarted.value = true
+    console.info('[Stage] ✅ WASM lip sync initialized')
   }
   catch (error) {
-    lipSyncStarted.value = false
-    console.error('Failed to setup Live2D lip sync', error)
+    console.warn('[Stage] ⚠️ WASM lip sync failed, using volume-based fallback', error)
+    // Fallback: lip sync loop will use audioAnalyser instead
   }
+
+  startLipSyncLoop()
+  lipSyncStarted.value = true
+  console.info('[Stage] 🔄 Lip sync loop started, wasm:', !!live2dLipSync.value, 'analyser:', !!audioAnalyser.value)
 }
 
 function setupAnalyser() {
   if (!audioAnalyser.value) {
     audioAnalyser.value = audioContext.createAnalyser()
+    // Optimize for speech lip sync
+    audioAnalyser.value.fftSize = 2048
+    audioAnalyser.value.smoothingTimeConstant = 0.3  // fast response for lip sync
   }
 }
 

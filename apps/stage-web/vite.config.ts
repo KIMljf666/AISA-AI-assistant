@@ -61,6 +61,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 5200,  // 🆕 Phase 8: 改为 5200 避免与 Genesis Arena (5173) 的 Service Worker 冲突
+    strictPort: true,  // 端口被占时直接报错，避免静默偏移
     warmup: {
       clientFiles: [
         `${resolve(join(import.meta.dirname, '..', '..', 'packages', 'stage-ui', 'src'))}/*.vue`,
@@ -124,46 +126,49 @@ export default defineConfig({
     ...(env.TARGET_HUGGINGFACE_SPACE
       ? []
       : [VitePWA({
-          registerType: 'autoUpdate',
-          includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-          manifest: {
-            name: 'AIRI',
-            short_name: 'AIRI',
-            icons: [
-              {
-                src: '/web-app-manifest-192x192.png',
-                sizes: '192x192',
-                type: 'image/png',
-              },
-              {
-                src: '/web-app-manifest-512x512.png',
-                sizes: '512x512',
-                type: 'image/png',
-              },
-              {
-                purpose: 'maskable',
-                sizes: '192x192',
-                src: '/maskable_icon_x192.png',
-                type: 'image/png',
-              },
-              {
-                purpose: 'maskable',
-                sizes: '512x512',
-                src: '/maskable_icon_x512.png',
-                type: 'image/png',
-              },
-            ],
-          },
-          workbox: {
-            maximumFileSizeToCacheInBytes: 64 * 1024 * 1024,
-            navigateFallbackDenylist: [
-              /^\/docs\//,
-              /^\/ui\//,
-              /^\/remote-assets\//,
-              /^\/api\//,
-            ],
-          },
-        })]),
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+        manifest: {
+          name: 'AIRI',
+          short_name: 'AIRI',
+          icons: [
+            {
+              src: '/web-app-manifest-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: '/web-app-manifest-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              purpose: 'maskable',
+              sizes: '192x192',
+              src: '/maskable_icon_x192.png',
+              type: 'image/png',
+            },
+            {
+              purpose: 'maskable',
+              sizes: '512x512',
+              src: '/maskable_icon_x512.png',
+              type: 'image/png',
+            },
+          ],
+        },
+        workbox: {
+          maximumFileSizeToCacheInBytes: 64 * 1024 * 1024,
+          navigateFallbackDenylist: [
+            /^\/docs\//,
+            /^\/ui\//,
+            /^\/remote-assets\//,
+            /^\/api\//,
+          ],
+        },
+        devOptions: {
+          enabled: false,  // 🆕 Phase 8: 开发模式禁用 SW，避免与其他 Vite 项目冲突
+        },
+      })]),
 
     // https://github.com/intlify/bundle-tools/tree/main/packages/unplugin-vue-i18n
     VueI18n({
@@ -182,24 +187,26 @@ export default defineConfig({
     Download('https://dist.ayaka.moe/vrm-models/VRoid-Hub/AvatarSample-B/AvatarSample_B.vrm', 'AvatarSample_B.vrm', 'vrm/models/AvatarSample-B', { parentDir: stageUIAssetsRoot, cacheDir: sharedCacheDir }),
 
     // HuggingFace Spaces
-    LFS({ root: cwd(), extraGlobs: [
-      // Scene & Models
-      '*.vrm',
-      '*.vrma',
-      '*.hdr',
-      '*.cmo3',
-      // Images & Fonts
-      '*.png',
-      '*.jpg',
-      '*.jpeg',
-      '*.gif',
-      '*.webp',
-      '*.bmp',
-      '*.ttf',
-      '*.avif',
-      // Tensorflow / MediaPipe task
-      '*.task',
-    ] }),
+    LFS({
+      root: cwd(), extraGlobs: [
+        // Scene & Models
+        '*.vrm',
+        '*.vrma',
+        '*.hdr',
+        '*.cmo3',
+        // Images & Fonts
+        '*.png',
+        '*.jpg',
+        '*.jpeg',
+        '*.gif',
+        '*.webp',
+        '*.bmp',
+        '*.ttf',
+        '*.avif',
+        // Tensorflow / MediaPipe task
+        '*.task',
+      ]
+    }),
     SpaceCard({
       root: cwd(),
       title: 'AIRI: Virtual Companion',
@@ -230,33 +237,33 @@ export default defineConfig({
     ...((!env.S3_ENDPOINT || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY)
       ? []
       : [
-          WarpDrivePlugin({
-            prefix: env.STAGE_WEB_WARP_DRIVE_PREFIX || 'proj-airi/stage-web/main/',
-            include: [/\.wasm$/i, /\.ttf$/i, /\.vrm$/i, /\.zip$/i], // in existing assets, wasm, ttf, vrm files are the largest ones
-            manifest: true,
-            clean: false,
-            contentTypeBy: (filename: string) => {
-              if (filename.endsWith('.wasm')) {
-                return 'application/wasm'
-              }
-              if (filename.endsWith('.ttf')) {
-                return 'font/ttf'
-              }
-              if (filename.endsWith('.vrm')) {
-                return 'application/octet-stream'
-              }
-              if (filename.endsWith('.zip')) {
-                return 'application/zip'
-              }
-            },
-            provider: createS3Provider({
-              endpoint: env.S3_ENDPOINT,
-              accessKeyId: env.S3_ACCESS_KEY_ID,
-              secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-              region: env.S3_REGION,
-              publicBaseUrl: env.WARP_DRIVE_PUBLIC_BASE ?? env.S3_ENDPOINT,
-            }),
+        WarpDrivePlugin({
+          prefix: env.STAGE_WEB_WARP_DRIVE_PREFIX || 'proj-airi/stage-web/main/',
+          include: [/\.wasm$/i, /\.ttf$/i, /\.vrm$/i, /\.zip$/i], // in existing assets, wasm, ttf, vrm files are the largest ones
+          manifest: true,
+          clean: false,
+          contentTypeBy: (filename: string) => {
+            if (filename.endsWith('.wasm')) {
+              return 'application/wasm'
+            }
+            if (filename.endsWith('.ttf')) {
+              return 'font/ttf'
+            }
+            if (filename.endsWith('.vrm')) {
+              return 'application/octet-stream'
+            }
+            if (filename.endsWith('.zip')) {
+              return 'application/zip'
+            }
+          },
+          provider: createS3Provider({
+            endpoint: env.S3_ENDPOINT,
+            accessKeyId: env.S3_ACCESS_KEY_ID,
+            secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+            region: env.S3_REGION,
+            publicBaseUrl: env.WARP_DRIVE_PUBLIC_BASE ?? env.S3_ENDPOINT,
           }),
-        ]),
+        }),
+      ]),
   ],
 })

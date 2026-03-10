@@ -13,6 +13,7 @@ import { ref, toRaw } from 'vue'
 import { useAnalytics } from '../composables'
 import { useLlmmarkerParser } from '../composables/llm-marker-parser'
 import { categorizeResponse, createStreamingCategorizer } from '../composables/response-categoriser'
+import { ContextUpdateStrategy } from '@proj-airi/server-sdk'
 import { createDatetimeContext } from './chat/context-providers'
 import { useChatContextStore } from './chat/context-store'
 import { createChatHooks } from './chat/hooks'
@@ -20,6 +21,7 @@ import { useChatSessionStore } from './chat/session-store'
 import { useChatStreamStore } from './chat/stream-store'
 import { useLLM } from './llm'
 import { useConsciousnessStore } from './modules/consciousness'
+import { useNarrativeBridgeStore } from './modules/narrative-bridge'
 
 interface SendOptions {
   model: string
@@ -110,6 +112,35 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
 
     // Inject current datetime context before composing the message
     chatContext.ingestContextMessage(createDatetimeContext())
+
+    // 🧠 NarrativeEngine Integration: Fetch enriched system prompt
+    const narrativeBridge = useNarrativeBridgeStore()
+    let narrativePromptInjected = false
+    if (narrativeBridge.enabled) {
+      try {
+        const enrichedPrompt = await narrativeBridge.fetchEnrichedPrompt()
+        if (enrichedPrompt) {
+          chatContext.ingestContextMessage({
+            id: nanoid(),
+            contextId: 'narrative-engine:character-state',
+            strategy: ContextUpdateStrategy.ReplaceSelf,
+            text: enrichedPrompt,
+            createdAt: Date.now(),
+          })
+          narrativePromptInjected = true
+          narrativeBridge.addLocalEvent({
+            layer: 6,
+            layer_name: '方案层',
+            content: `增强 prompt 已注入 (${enrichedPrompt.length} chars)`,
+            timestamp: new Date().toISOString(),
+            event_type: 'decision',
+          })
+        }
+      }
+      catch (err) {
+        console.warn('[NarrativeBridge] Failed to inject enriched prompt:', err)
+      }
+    }
 
     const sendingCreatedAt = Date.now()
     const streamingMessageContext: ChatStreamEventContext = {
@@ -334,6 +365,12 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
 
       await hooks.emitAfterSendHooks(sendingMessage, streamingMessageContext)
       await hooks.emitAssistantMessageHooks({ ...buildingMessage }, fullText, streamingMessageContext)
+
+      // 🧠 NarrativeEngine Integration: Submit dialogue feedback
+      if (narrativeBridge.enabled && narrativePromptInjected && fullText) {
+        narrativeBridge.submitDialogueFeedback(sendingMessage, fullText)
+          .catch(err => console.warn('[NarrativeBridge] Feedback failed:', err))
+      }
       await hooks.emitChatTurnCompleteHooks({
         output: { ...buildingMessage },
         outputText: fullText,

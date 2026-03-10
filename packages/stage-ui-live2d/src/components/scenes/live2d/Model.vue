@@ -297,6 +297,10 @@ async function loadModel() {
           if (curve.id === 'ParamEyeBallX' || curve.id === 'ParamEyeBallY') {
             curve.id = `_${curve.id}`
           }
+          // 🆕 Phase 6: Suppress idle mouth curves so lip sync can take priority
+          if (curve.id === 'ParamMouthOpenY' || curve.id === 'ParamMouthForm') {
+            curve.id = `_${curve.id}`
+          }
         })
       })
     }
@@ -485,6 +489,9 @@ watch(() => modelParameters.value.rightEyeOpen, (value) => {
 })
 
 watch(() => modelParameters.value.mouthOpen, (value) => {
+  // 🆕 Phase 6: Skip idle mouth when lip sync is active
+  if (mouthOpenSize.value > 0)
+    return
   if (model.value) {
     const internalModel = model.value.internalModel
     internalModel.coreModel.setParameterValueById('ParamMouthOpenY', value)

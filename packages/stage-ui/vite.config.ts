@@ -61,32 +61,32 @@ export default defineConfig({
     ...((!env.S3_ENDPOINT || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY)
       ? []
       : [
-          WarpDrivePlugin({
-            prefix: env.STAGE_UI_WARP_DRIVE_PREFIX || 'proj-airi/stage-ui/main/',
-            include: [/\.wasm$/i, /\.ttf$/i, /\.vrm$/i, /\.zip$/i], // in existing assets, wasm, ttf, vrm files are the largest ones
-            manifest: true,
-            contentTypeBy: (filename: string) => {
-              if (filename.endsWith('.wasm')) {
-                return 'application/wasm'
-              }
-              if (filename.endsWith('.ttf')) {
-                return 'font/ttf'
-              }
-              if (filename.endsWith('.vrm')) {
-                return 'application/octet-stream'
-              }
-              if (filename.endsWith('.zip')) {
-                return 'application/zip'
-              }
-            },
-            provider: createS3Provider({
-              endpoint: env.S3_ENDPOINT,
-              accessKeyId: env.S3_ACCESS_KEY_ID,
-              secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-              region: env.S3_REGION,
-              publicBaseUrl: env.WARP_DRIVE_PUBLIC_BASE ?? env.S3_ENDPOINT,
-            }),
+        WarpDrivePlugin({
+          prefix: env.STAGE_UI_WARP_DRIVE_PREFIX || 'proj-airi/stage-ui/main/',
+          include: [/\.wasm$/i, /\.ttf$/i, /\.vrm$/i, /\.zip$/i], // in existing assets, wasm, ttf, vrm files are the largest ones
+          manifest: true,
+          contentTypeBy: (filename: string) => {
+            if (filename.endsWith('.wasm')) {
+              return 'application/wasm'
+            }
+            if (filename.endsWith('.ttf')) {
+              return 'font/ttf'
+            }
+            if (filename.endsWith('.vrm')) {
+              return 'application/octet-stream'
+            }
+            if (filename.endsWith('.zip')) {
+              return 'application/zip'
+            }
+          },
+          provider: createS3Provider({
+            endpoint: env.S3_ENDPOINT,
+            accessKeyId: env.S3_ACCESS_KEY_ID,
+            secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+            region: env.S3_REGION,
+            publicBaseUrl: env.WARP_DRIVE_PUBLIC_BASE ?? env.S3_ENDPOINT,
           }),
-        ]),
+        }),
+      ]),
   ],
 })

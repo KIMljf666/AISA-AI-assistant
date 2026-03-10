@@ -18,6 +18,7 @@ import { RouterView } from 'vue-router'
 import { toast, Toaster } from 'vue-sonner'
 
 import PerformanceOverlay from './components/Devtools/PerformanceOverlay.vue'
+import CognitiveBubble from '@proj-airi/stage-ui/components/cognitive/CognitiveBubble.vue'
 
 import { usePWAStore } from './stores/pwa'
 
@@ -130,6 +131,7 @@ function handleSetupSkipped() {
   />
 
   <PerformanceOverlay />
+  <CognitiveBubble />
 </template>
 
 <style>
