@@ -3,7 +3,8 @@
 > **目的**: 帮助其他 Agent 快速理解当前系统的架构、已完成功能、数据接口和预期目标  
 > **版本**: P6 (Commit `e6b9182ee`)  
 > **日期**: 2026-03-13  
-> **测试状态**: 102 tests, 全部通过
+> **测试状态**: 102 tests, 全部通过  
+> **项目根**: `/Users/jifanliu/Desktop/开端/后端/NPC system 20250328/`
 
 ---
 
@@ -29,28 +30,114 @@
 
 ---
 
-## 二、核心组件清单
+## 二、核心组件清单与实现索引
 
-| 组件 | 文件 | 功能 | 状态 |
+> 以下所有路径均相对于 `/Users/jifanliu/Desktop/开端/后端/NPC system 20250328/`
+
+### 2.1 CPI 认知供应商接口
+
+| 项目 | 路径 |
+|------|------|
+| **主文件** | `narrative_engine/api/cpi/narrative_engine.py` |
+| **类名** | `NarrativeEngineCognitiveProvider` |
+
+**CPI 方法索引 (行号)**:
+
+| 方法 | 行号 | 功能 | 阶段 |
 |------|------|------|------|
-| **CPI** | `narrative_engine/api/cpi/narrative_engine.py` | 认知供应商接口, 7层认知管道 | ✅ P6 |
-| **Bridge** | `narrative_engine/api/airi_bridge.py` | AIRI ↔ NE 适配层, prompt 组装 | ✅ P6 |
-| **UCS** | `narrative_engine/core/unified_consciousness_stream.py` | 9层因果链意识流 | ✅ 可激活 |
-| **RGES** | `narrative_engine/core/rges/` | 反思+目标演化 (40+ 文件) | ⚠️ ERE async未桥接 |
-| **行为单元** | `narrative_engine/behavior/` | 65+ 文件, 23物理+15数字行为 | ✅ 架构完整 |
-| **记忆** | `narrative_engine/core/data_bus/dialogue_history_manager.py` | L2-L4分层+向量检索 | ✅ JSONL降级运行 |
+| `get_perception()` | L273 | 时间/天气/节日感知 | P0 |
+| `get_psychological_state()` | L332 | 情绪+四层心理 | P0 |
+| `recall_memories()` | L373 | 向量+时序记忆检索 | P0 |
+| `get_active_goals()` | L473 | 活跃目标 | P0 |
+| `get_consciousness()` | L487 | 意识流文本 | P0 |
+| `process_stimulus()` | L498 | UCS 刺激处理 | P4 |
+| `submit_experience()` | L543 | **核心入口**: 提交对话经验, 触发全Pipeline | P4 |
+| `_build_dialogue_life_moment()` | L649 | 对话→LifeMoment 构造 | P5 |
+| `_store_life_moment()` | L713 | LifeMoment JSONL 持久化 | P5 |
+| `_get_stored_reflections()` | L735 | 从存储获取反思记录 | P5 |
+| `_extract_dialogue_intent()` | L765 | 对话意图提取 (6关键词) | P4 |
+| `_evaluate_dialogue_quality()` | L792 | 4规则质量评分 | P4 |
+| `_trigger_dialogue_reflection()` | L828 | 低质量时触发反思 | P4 |
+| `_update_four_layers_state()` | L889 | 反思驱动四层心理更新 | P6 |
+| `_extract_key_facts_llm()` | L924 | LLM关键信息提取 (3 few-shot) | P6 |
+| `get_reflections()` | L1113 | 从JSONL+LifeMoment获取反思 | P6 |
+
+### 2.2 Bridge 适配层
+
+| 项目 | 路径 |
+|------|------|
+| **主文件** | `narrative_engine/api/airi_bridge.py` |
+| **核心函数** | `get_enriched_system_prompt()` — L376 |
+
+**Bridge 认知层广播 (行号)**:
+
+| 层级 | 内容 | 行号 |
+|------|------|------|
+| L0 感知层 | 环境感知 (时间/天气/节日) | L384-L403 |
+| L1 人格层 | 大五人格描述 | L493-L513 |
+| L2 心理评估 | 情绪+动机 | L405-L415 |
+| L3 记忆层 | 检索记忆 + 搜索方式广播 | L417-L444 |
+| L5 目标层 | 活跃目标 | L446-L455 |
+| L7 意识流 | UCS 输出 | L457-L465 |
+| L9 反思层 | 反思洞察 | L467-L476 |
+| L6 方案层 | Prompt 组装 (四层心理+环境+记忆+反思+约束) | L478-L574 |
+
+### 2.3 UCS 意识流
+
+| 项目 | 路径 |
+|------|------|
+| **主文件** | `narrative_engine/core/unified_consciousness_stream.py` |
+| **CPI 入口** | `process_stimulus()` — `narrative_engine/api/cpi/narrative_engine.py:L498` |
+
+### 2.4 RGES 反思与目标演化
+
+| 项目 | 路径 |
+|------|------|
+| **引擎目录** | `narrative_engine/core/rges/` (40+ 文件) |
+| **ERE 引擎** | `narrative_engine/core/rges/engines/experience_reflection_engine.py` |
+| **LifeMoment 模型** | `narrative_engine/core/rges/models/life_moment.py` |
+| **GoalAwareness 模型** | `narrative_engine/core/rges/models/goal_awareness.py` |
+| **LifeMoment 收集器** | `narrative_engine/core/rges/collectors/life_moment_collector.py` |
+| **LifeMoment 存储** | `narrative_engine/core/rges/storage/life_moment_storage.py` |
+| **LifeMoment 检索** | `narrative_engine/core/rges/retrievers/life_moment_retriever.py` |
+
+**ERE 核心方法**:
+
+| 方法 | 行号 | 说明 |
+|------|------|------|
+| `reflect_on_moment()` | L287 | 对单个 LifeMoment 进行 LLM 反思 (async) |
+| `reflect_batch()` | L378 | 批量反思 |
+
+> ⚠️ ERE 的方法是 async, CPI 是 sync — 当前通过 CPI 侧直接构建 LifeMoment 绕过
+
+### 2.5 行为单元系统
+
+| 项目 | 路径 |
+|------|------|
+| **行为目录** | `narrative_engine/behavior/` (65+ 文件) |
+| **物理行为** | 23 种: walk/run/examine/use/eat/sleep 等 |
+| **数字行为** | 15 种: search/compose/analyze 等 |
+| **CPI 映射** | `_build_dialogue_life_moment()` 将对话映射为 `social_interact` ActionRecord |
+
+### 2.6 记忆系统
+
+| 项目 | 路径 |
+|------|------|
+| **DHM** | `narrative_engine/core/dialogue_history_manager.py` |
+| **向量模型** | sentence-transformers `all-MiniLM-L6-v2` |
+| **降级存储** | `narrative_engine/api/cpi/narrative_engine.py:L559-L575` (JSONL fallback) |
 
 ---
 
-## 三、数据接口 (供其他Agent读取)
+## 三、数据文件索引 (绝对路径)
 
-### 3.1 记忆数据
+### 3.1 运行时数据
 
-| 路径 | 格式 | 内容 |
-|------|------|------|
-| `data/airi_memory/{char}_dialogue.jsonl` | JSONL | 每行一条记忆, 含 content/layer/timestamp |
-| `data/airi_memory/life_moments/{char}_moments.jsonl` | JSONL | LifeMoment 6维数据 (意图/行为/结果/他者/状态/环境) |
-| `data/characters/{char}.json` | JSON | 角色配置 (personality/four_layers/speech_patterns) |
+| 数据 | 绝对路径 | 格式 |
+|------|---------|------|
+| **对话记忆** | `/Users/jifanliu/Desktop/开端/后端/NPC system 20250328/narrative_engine/data/airi_memory/saihisis_dialogue.jsonl` | JSONL (592条) |
+| **LifeMoment** | `/Users/jifanliu/Desktop/开端/后端/NPC system 20250328/narrative_engine/data/airi_memory/life_moments/saihisis_moments.jsonl` | JSONL (122KB) |
+| **角色配置** | `/Users/jifanliu/Desktop/开端/后端/NPC system 20250328/narrative_engine/data/characters/saihisis.json` | JSON |
 
 ### 3.2 LifeMoment 数据结构
 
@@ -78,7 +165,7 @@
 }
 ```
 
-### 3.3 四层心理数据
+### 3.3 四层心理数据 (存储在角色配置 JSON 的 `four_layers` 字段)
 
 ```json
 {
@@ -89,43 +176,48 @@
 }
 ```
 
-### 3.4 CPI API
+---
 
-| 方法 | 入参 | 出参 | 说明 |
-|------|------|------|------|
-| `get_perception(char_id)` | str | Dict | 时间/天气/节日 |
-| `get_psychological_state(char_id)` | str | Dict | 情绪+四层心理 |
-| `recall_memories(char_id, limit)` | str, int | List[Dict] | 向量+时序检索 |
-| `get_active_goals(char_id)` | str | List[Dict] | 活跃目标 |
-| `get_consciousness(char_id)` | str | str | 意识流文本 |
-| `get_reflections(char_id, limit)` | str, int | List[Dict] | 反思洞察 |
-| `submit_experience(char_id, exp)` | str, Dict | Dict | 提交对话经验, 触发Pipeline |
-| `process_stimulus(char_id, text)` | str, str | Dict | UCS 刺激处理 |
+## 四、测试文件索引
+
+> 路径均相对于 `narrative_engine/tests/integration/`
+
+| 测试文件 | 用例数 | 覆盖范围 |
+|---------|--------|---------|
+| `test_cpi_interface.py` | 30+ | CPI 7层合约 + submit_experience |
+| `test_airi_bridge.py` | 10+ | Bridge API + 健康检查 |
+| `test_p1_pipeline.py` | 22 | 感知+记忆+意识流 Pipeline |
+| `test_e2e_dialogue.py` | 14 | 真LLM多轮对话 E2E |
+| `test_p4_behavior_pipeline.py` | 16 | UCS+意图+质量+RGES+反思 |
+| **合计** | **102 passed** | **99s** |
 
 ---
 
-## 四、当前实际效果
+## 五、当前实际效果
 
-| 能力 | 现状 | 说明 |
-|------|------|------|
-| 记忆持久化 | ✅ 592条 | JSONL 文件, 跨会话保留 |
-| UCS 激活 | ✅ 每轮 | `process_stimulus` 自动调用 |
-| 意图提取 | ⚠️ 关键词级 | 6个标记词匹配, 非语义理解 |
-| 质量评分 | ⚠️ 规则级 | 4条规则 (长度/空洞/禁忌/覆盖) |
-| 反思触发 | ⚠️ 低频 | quality<0.5才触发, 正常对话不触发 |
-| Prompt注入 | ✅ 运行 | 反思+记忆+四层心理+目标 |
-| 四层心理更新 | ⚠️ 低频 | quality<0.3才更新 state/motivation |
+| 能力 | 现状 | 实现位置 |
+|------|------|---------|
+| 记忆持久化 | ✅ 592条 | `narrative_engine.py:L559-L575` (JSONL降级) |
+| UCS 激活 | ✅ 每轮 | `narrative_engine.py:L596` → `process_stimulus()` |
+| 意图提取 | ⚠️ 关键词级 | `narrative_engine.py:L765` (`_extract_dialogue_intent`) |
+| 质量评分 | ⚠️ 规则级 | `narrative_engine.py:L792` (`_evaluate_dialogue_quality`) |
+| 反思触发 | ⚠️ 低频 | `narrative_engine.py:L828` (quality<0.5) |
+| Prompt注入 | ✅ 运行 | `airi_bridge.py:L478-L574` (prompt组装) |
+| 四层心理更新 | ⚠️ 低频 | `narrative_engine.py:L889` (quality<0.3) |
+| Key Fact 提取 | ✅ Few-shot | `narrative_engine.py:L924` (3 few-shot例子) |
+| 反思回流 | ✅ P6 | `narrative_engine.py:L1113` → `airi_bridge.py:L551` |
 
 ### 已知限制
 
-1. **ERE async 未桥接** — `ExperienceReflectionEngine.reflect_on_moment()` 是 async, CPI 是 sync
-2. **反思信号微弱** — 正常对话 quality≈0.7, 绝大多数不触发反思
-3. **无 A/B 对照数据** — 无法证明系统增量价值
-4. **无真实用户测试** — 全部数据来自自动化测试
+| 限制 | 相关文件 | 说明 |
+|------|---------|------|
+| ERE async 未桥接 | `rges/engines/experience_reflection_engine.py:L287` | `reflect_on_moment()` 是 async, CPI 是 sync |
+| 反思信号微弱 | `narrative_engine.py:L635` | 阈值 quality<0.5, 正常对话 quality≈0.7 |
+| DHM 初始化失败 | `core/dialogue_history_manager.py` | `add_dialogue` 方法缺失, 已降级到 JSONL |
 
 ---
 
-## 五、预期目标
+## 六、预期目标
 
 ### 短期 (1-2周)
 
@@ -153,26 +245,33 @@
 
 ---
 
-## 六、Git 提交链 (供追溯)
+## 七、Git 提交链 (供追溯)
 
-| 哈希 | 阶段 | 日期 |
-|------|------|------|
-| `e6b9182ee` | P6 核心优化 | 2026-03-13 |
-| `fdfe6ccb4` | P5 ERE修复 | 2026-03-13 |
-| `043af9f4a` | P4 行为Pipeline | 2026-03-13 |
-| `775ac8091` | P0-P2 基础集成 | 2026-03-13 |
+| 哈希 | 阶段 | 日期 | 版本记录 |
+|------|------|------|---------|
+| `e6b9182ee` | P6 核心优化 | 2026-03-13 | `docs/版本记录/v_P6_核心优化_反思回流_KeyFact.md` |
+| `fdfe6ccb4` | P5 ERE修复 | 2026-03-13 | `docs/版本记录/v_P5_ERE修复_RGES闭环_fdfe6ccb4.md` |
+| `043af9f4a` | P4 行为Pipeline | 2026-03-13 | `docs/版本记录/v_P4_行为Pipeline接入_043af9f4a.md` |
+| `775ac8091` | P0-P2 基础集成 | 2026-03-13 | — |
 
 ---
 
-## 七、如何协作
+## 八、如何协作
 
 ### 给 OpenClaw Agent 的接口
 
 OpenClaw 可通过以下方式读取系统数据进行监控:
 
-1. **直接读取 JSONL** — `data/airi_memory/` 下所有文件
-2. **调用 CPI Python API** — 通过 `sys.path` import
-3. **读取角色配置** — `data/characters/{char}.json`
+| 方式 | 路径 | 说明 |
+|------|------|------|
+| 读取对话记忆 | `narrative_engine/data/airi_memory/saihisis_dialogue.jsonl` | 每行一条, JSON |
+| 读取 LifeMoment | `narrative_engine/data/airi_memory/life_moments/saihisis_moments.jsonl` | 6维结构 |
+| 读取角色配置 | `narrative_engine/data/characters/saihisis.json` | 含 four_layers |
+| 调用 CPI API | `sys.path.insert(0, 'narrative_engine/')` → `from api.cpi.narrative_engine import NarrativeEngineCognitiveProvider` | Python |
+
+### OpenClaw 项目根
+
+`/Users/jifanliu/Desktop/开端/后端/NPC system 20250328/openclaw-mission-control/`
 
 ### 建议 OpenClaw Cron Job
 
@@ -193,8 +292,18 @@ OpenClaw 可通过以下方式读取系统数据进行监控:
 ~/openclaw-discord/skills/consciousness-evaluation/
 ├── SKILL.md          # 评估指令
 ├── scripts/
-│   ├── evaluate.py   # 评分脚本
+│   ├── evaluate.py   # 评分脚本 (读JSONL+调Judge LLM+写SQLite)
 │   └── report.py     # 报告生成
 └── templates/
     └── eval_prompt.md # Judge LLM 评估 prompt
 ```
+
+### 相关文档索引
+
+| 文档 | 路径 |
+|------|------|
+| 全面验证测试方案 | `docs/说明文档系列/测试方案/意识流系统全面验证测试方案_v1.md` |
+| OpenClaw评测方案 | `docs/说明文档系列/测试方案/OpenClaw自动化评测监控Agent方案.md` |
+| 深度评估报告 | `docs/说明文档系列/专家评估/意识流闭环系统深度评估_全球定位与迭代路径.md` |
+| 行为单元评估 | `docs/说明文档系列/专家评估/行为单元架构深度评估_Skill与原子行为与对话场景.md` |
+| 集成操作文档 | `docs/说明文档系列/AIRI自驱系统集成操作说明文档.md` |
