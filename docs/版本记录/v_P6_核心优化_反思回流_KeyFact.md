@@ -1,6 +1,6 @@
 # 版本记录 — P6 核心优化
 
-## Commit 待确认 | 2026-03-13 19:05
+## Commit e6b9182ee | 2026-03-13 19:05
 
 > **分支**: `feature/genesis-arena-mvp`  
 > **基于**: Commit `fdfe6ccb4` (P5 ERE修复)
