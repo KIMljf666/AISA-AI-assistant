@@ -84,6 +84,118 @@ export const useNarrativeBridgeStore = defineStore('narrative-bridge', () => {
   const proactiveMessage = ref<string | null>(null)
   const onProactiveDialogue = ref<((content: string) => void) | null>(null)
 
+  // 🆕 Phase 19: 陪伴感 — 共处感知
+  const sessionStartTime = ref(Date.now())
+  const sessionDurationMinutes = ref(0)
+  const isUserAway = ref(false)
+  const userAwayStartTime = ref(0)
+  const lastUserActivityTime = ref(Date.now())
+  const idleStatusText = ref('在想事情...')
+  const companionStatsText = ref('')
+
+  // 闲置状态文本 (基于时段+心理状态)
+  const IDLE_TEXTS_BY_PERIOD: Record<string, string[]> = {
+    morning: ['在想今天的计划...', '早上空气真好呢', '新的一天开始了！'],
+    afternoon: ['在思考一些有趣的事情...', '下午了，要不要休息一下？', '有点想聊天呢...'],
+    evening: ['傍晚了呢...', '今天过得怎么样？', '在回顾今天的事情...'],
+    night: ['夜深了...', '还在忙吗？', '有点困了...'],
+  }
+
+  function getTimePeriod(): string {
+    const h = new Date().getHours()
+    if (h >= 6 && h < 12)
+      return 'morning'
+    if (h >= 12 && h < 18)
+      return 'afternoon'
+    if (h >= 18 && h < 22)
+      return 'evening'
+    return 'night'
+  }
+
+  function updateIdleStatus() {
+    const period = getTimePeriod()
+    const texts = IDLE_TEXTS_BY_PERIOD[period] || IDLE_TEXTS_BY_PERIOD.afternoon
+    idleStatusText.value = texts[Math.floor(Math.random() * texts.length)]
+  }
+
+  function updateSessionDuration() {
+    sessionDurationMinutes.value = Math.floor((Date.now() - sessionStartTime.value) / 60000)
+    const mins = sessionDurationMinutes.value
+    if (mins < 1)
+      companionStatsText.value = '刚刚上线'
+    else if (mins < 60)
+      companionStatsText.value = `一起待了 ${mins} 分钟`
+    else companionStatsText.value = `一起待了 ${Math.floor(mins / 60)} 小时 ${mins % 60} 分钟`
+  }
+
+  // Page Visibility 监听
+  function setupPageVisibility() {
+    if (typeof document === 'undefined')
+      return
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // 用户离开
+        isUserAway.value = true
+        userAwayStartTime.value = Date.now()
+        addLocalEvent({
+          layer: 7,
+          layer_name: '意识流',
+          content: '用户切换了窗口...去忙了吧',
+          timestamp: new Date().toISOString(),
+          event_type: 'thinking',
+        })
+      }
+      else {
+        // 用户回来
+        const awayMs = Date.now() - userAwayStartTime.value
+        const awayMin = Math.floor(awayMs / 60000)
+        isUserAway.value = false
+        lastUserActivityTime.value = Date.now()
+
+        let welcomeBack = '欢迎回来！'
+        if (awayMin >= 60)
+          welcomeBack = `欢迎回来！你离开了 ${Math.floor(awayMin / 60)} 小时 ${awayMin % 60} 分钟`
+        else if (awayMin >= 5)
+          welcomeBack = `欢迎回来！你离开了 ${awayMin} 分钟`
+        else if (awayMin >= 1)
+          welcomeBack = `回来啦～`
+
+        if (awayMin >= 1) {
+          addLocalEvent({
+            layer: 7,
+            layer_name: '意识流',
+            content: welcomeBack,
+            timestamp: new Date().toISOString(),
+            event_type: 'thinking',
+            metadata: { away_minutes: awayMin, trigger: 'page_visibility' },
+          })
+
+          // 如果离开超过 5 分钟且有回调注册，触发主动问候
+          if (awayMin >= 5 && onProactiveDialogue.value) {
+            onProactiveDialogue.value(welcomeBack)
+          }
+        }
+      }
+    })
+  }
+
+  // 定时器：每 30 秒更新闲置状态 + 每 60 秒更新在线时长
+  let idleTimer: ReturnType<typeof setInterval> | null = null
+  let durationTimer: ReturnType<typeof setInterval> | null = null
+
+  function startCompanionTimers() {
+    updateIdleStatus()
+    updateSessionDuration()
+    setupPageVisibility()
+    idleTimer = setInterval(updateIdleStatus, 30000)
+    durationTimer = setInterval(updateSessionDuration, 60000)
+  }
+
+  function stopCompanionTimers() {
+    if (idleTimer) { clearInterval(idleTimer); idleTimer = null }
+    if (durationTimer) { clearInterval(durationTimer); durationTimer = null }
+  }
+
   // Computed
   const latestEvent = computed(() =>
     cognitiveEvents.value.length > 0
@@ -417,12 +529,16 @@ export const useNarrativeBridgeStore = defineStore('narrative-bridge', () => {
     }
   }
 
-  // Auto-connect when enabled
+  // Auto-connect when enabled + start companion timers
   watch(enabled, (newVal) => {
-    if (newVal)
+    if (newVal) {
       connectWebSocket()
-    else
+      startCompanionTimers()
+    }
+    else {
       disconnectWebSocket()
+      stopCompanionTimers()
+    }
   })
 
   return {
@@ -471,5 +587,14 @@ export const useNarrativeBridgeStore = defineStore('narrative-bridge', () => {
     // 🆕 Phase 9: Proactive dialogue
     proactiveMessage,
     onProactiveDialogue,
+
+    // 🆕 Phase 19: Companion presence
+    sessionDurationMinutes,
+    idleStatusText,
+    companionStatsText,
+    isUserAway,
+    lastUserActivityTime,
+    startCompanionTimers,
+    stopCompanionTimers,
   }
 })

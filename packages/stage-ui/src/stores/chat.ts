@@ -5,6 +5,7 @@ import type { CommonContentPart, Message, ToolMessage } from '@xsai/shared-chat'
 import type { ChatAssistantMessage, ChatSlices, ChatStreamEventContext, StreamingAssistantMessage } from '../types/chat'
 import type { StreamEvent, StreamOptions } from './llm'
 
+import { ContextUpdateStrategy } from '@proj-airi/server-sdk'
 import { createQueue } from '@proj-airi/stream-kit'
 import { nanoid } from 'nanoid'
 import { defineStore, storeToRefs } from 'pinia'
@@ -13,7 +14,6 @@ import { ref, toRaw } from 'vue'
 import { useAnalytics } from '../composables'
 import { useLlmmarkerParser } from '../composables/llm-marker-parser'
 import { categorizeResponse, createStreamingCategorizer } from '../composables/response-categoriser'
-import { ContextUpdateStrategy } from '@proj-airi/server-sdk'
 import { createDatetimeContext } from './chat/context-providers'
 import { useChatContextStore } from './chat/context-store'
 import { createChatHooks } from './chat/hooks'
@@ -66,6 +66,49 @@ export const useChatOrchestratorStore = defineStore('chat-orchestrator', () => {
   const sending = ref(false)
   const pendingQueuedSends = ref<QueuedSend[]>([])
   const hooks = createChatHooks()
+
+  // 🆕 Phase 19: 主动对话注入 — 将意识流的 proactive_dialogue 注入为 AIRI 消息
+  const narrativeBridgeForProactive = useNarrativeBridgeStore()
+  narrativeBridgeForProactive.onProactiveDialogue = (content: string) => {
+    if (sending.value)
+      return // 正在发送中不打断
+    const sessionId = activeSessionId.value
+    const sessionMessages = chatSession.getSessionMessages(sessionId)
+
+    // 注入为 assistant 消息
+    const proactiveMsg = {
+      role: 'assistant' as const,
+      content,
+      slices: [{ type: 'text' as const, text: content }],
+      tool_results: [],
+      createdAt: Date.now(),
+      id: nanoid(),
+    }
+    sessionMessages.push(proactiveMsg)
+    chatSession.persistSessionMessages(sessionId)
+
+    // 更新 UI 流
+    streamingMessage.value = { role: 'assistant', content: '', slices: [], tool_results: [] }
+
+    // 触发 TTS (通过 hooks) — emitAssistantResponseEndHooks 需要 fullText + context
+    hooks.emitAssistantResponseEndHooks(content, {
+      message: proactiveMsg as any,
+      contexts: chatContext.getContextsSnapshot(),
+      composedMessage: [],
+    }).catch(() => {})
+
+    // 广播到认知事件流
+    narrativeBridgeForProactive.addLocalEvent({
+      layer: 8,
+      layer_name: '执行层',
+      content: `💬 主动对话: ${content.slice(0, 100)}`,
+      timestamp: new Date().toISOString(),
+      event_type: 'proactive_dialogue',
+      metadata: { source: 'proactive_injection' },
+    })
+
+    console.info('[Chat] 🗣️ Proactive dialogue injected:', content.slice(0, 80))
+  }
 
   const sendQueue = createQueue<QueuedSend>({
     handlers: [

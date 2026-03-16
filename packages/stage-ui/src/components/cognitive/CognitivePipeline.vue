@@ -12,17 +12,23 @@
  * - 支持 sidebar / fullscreen 两种布局模式
  */
 import { storeToRefs } from 'pinia'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 
 import { LAYER_COLORS, useNarrativeBridgeStore } from '../../stores/modules/narrative-bridge'
-
-const store = useNarrativeBridgeStore()
-const { cognitiveEvents, connected, isConsciousnessActive } = storeToRefs(store)
 
 // ── Props ──
 const props = withDefaults(defineProps<{
   mode?: 'sidebar' | 'fullscreen'
 }>(), { mode: 'sidebar' })
+const store = useNarrativeBridgeStore()
+const {
+  cognitiveEvents,
+  connected,
+  isConsciousnessActive,
+  idleStatusText,
+  companionStatsText,
+  isUserAway,
+} = storeToRefs(store)
 
 // ── State ──
 const isOpen = ref(false)
@@ -126,22 +132,26 @@ function formatTime(ts: string): string {
 
 // 智能判断是否为意识流循环的起始 (新的 cycle)
 function isCycleStart(event: any, prevEvent: any): boolean {
-  if (!prevEvent) return false
+  if (!prevEvent)
+    return false
   // 如果上一个事件和当前事件的 cycle 编号不同
   if (event.metadata?.cycle !== undefined && prevEvent?.metadata?.cycle !== undefined) {
     return event.metadata.cycle !== prevEvent.metadata.cycle
   }
   // 或者 layer 从高到低 (反思→感知 = 新循环)
-  if (prevEvent.layer === 9 && event.layer === 0) return true
+  if (prevEvent.layer === 9 && event.layer === 0)
+    return true
   return false
 }
 
 // 监听新事件
 let prevRawEvent: any = null
 watch(cognitiveEvents, (events) => {
-  if (!events || events.length === 0) return
+  if (!events || events.length === 0)
+    return
   const latest = events[events.length - 1]
-  if (!latest) return
+  if (!latest)
+    return
 
   // 检测新循环
   if (isCycleStart(latest, prevRawEvent) && cards.value.length > 0) {
@@ -210,20 +220,25 @@ const detailLevelLabel = computed(() => {
 
 // 按内容截断
 function truncateContent(content: string, maxLen: number): string {
-  if (content.length <= maxLen) return content
+  if (content.length <= maxLen)
+    return content
   return `${content.slice(0, maxLen)}...`
 }
 
 // ── 状态指示 ──
 const statusText = computed(() => {
-  if (!connected.value) return '未连接'
-  if (isConsciousnessActive.value) return '意识活跃'
+  if (!connected.value)
+    return '未连接'
+  if (isConsciousnessActive.value)
+    return '意识活跃'
   return '已连接'
 })
 
 const statusDot = computed(() => {
-  if (!connected.value) return 'dot-offline'
-  if (isConsciousnessActive.value) return 'dot-active'
+  if (!connected.value)
+    return 'dot-offline'
+  if (isConsciousnessActive.value)
+    return 'dot-active'
   return 'dot-connected'
 })
 </script>
@@ -236,7 +251,7 @@ const statusDot = computed(() => {
     @click="togglePanel"
   >
     <span class="toggle-icon">🧬</span>
-    <span class="toggle-label">认知瀑布流</span>
+    <span class="toggle-label">{{ idleStatusText }}</span>
     <span :class="['status-dot-sm', statusDot]" />
   </button>
 
@@ -277,7 +292,9 @@ const statusDot = computed(() => {
           <div v-if="cards.length === 0" class="empty-state">
             <span class="empty-icon">🧠</span>
             <p>等待认知事件...</p>
-            <p class="empty-hint">开始对话或启动意识流循环</p>
+            <p class="empty-hint">
+              开始对话或启动意识流循环
+            </p>
           </div>
 
           <div class="timeline">
@@ -337,7 +354,9 @@ const statusDot = computed(() => {
                     <span class="card-label user-label">用户输入</span>
                     <span class="card-time">{{ card.timestamp }}</span>
                   </div>
-                  <div class="card-content">{{ card.content }}</div>
+                  <div class="card-content">
+                    {{ card.content }}
+                  </div>
                 </div>
               </template>
 
@@ -353,7 +372,9 @@ const statusDot = computed(() => {
                     <span class="card-label airi-label">AIRI 主动</span>
                     <span class="card-time">{{ card.timestamp }}</span>
                   </div>
-                  <div class="card-content">{{ card.content }}</div>
+                  <div class="card-content">
+                    {{ card.content }}
+                  </div>
                 </div>
               </template>
             </div>
@@ -363,6 +384,7 @@ const statusDot = computed(() => {
         <!-- 底部状态栏 -->
         <div class="pipeline-footer">
           <span class="footer-stat">{{ cards.length }} 事件</span>
+          <span v-if="companionStatsText" class="footer-companion">{{ isUserAway ? '💤 用户离开' : `✨ ${companionStatsText}` }}</span>
           <label class="auto-scroll-toggle">
             <input v-model="autoScroll" type="checkbox">
             <span>自动滚动</span>
@@ -649,6 +671,7 @@ const statusDot = computed(() => {
   flex-shrink: 0;
 }
 .footer-stat { font-family: 'JetBrains Mono', monospace; }
+.footer-companion { color: #a78bfa; font-size: 11px; }
 .auto-scroll-toggle {
   display: flex;
   align-items: center;
