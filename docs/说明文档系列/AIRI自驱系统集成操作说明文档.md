@@ -1,6 +1,6 @@
 # AIRI × NarrativeEngine 自驱系统集成 — 操作说明文档
 
-**版本** v2.0 · 2026-03-09 · 赛希斯 (Saihisis) ENTJ 人格体
+**版本** v3.0 · 2026-03-16 · 赛希斯 (Saihisis) ENTJ 人格体
 
 ---
 
@@ -35,7 +35,11 @@
 │  │  ├ POST /api/airi/dialogue-feedback                         │ │
 │  │  ├ WS   /api/airi/ws/cognitive-stream                       │ │
 │  │  ├ POST /api/airi/consciousness/start|stop                  │ │
-│  │  └ GET  /api/airi/health                                    │ │
+│  │  ├ GET  /api/airi/health                                    │ │
+│  │  ├ 🆕 GET /api/airi/prompt-inspect (Prompt透视)              │ │
+│  │  ├ 🆕 GET /api/airi/memory-browser (记忆浏览)                │ │
+│  │  ├ 🆕 GET /api/airi/conversation-history (对话历史)           │ │
+│  │  └ 🆕 GET /api/airi/metrics | logs | export (监控导出)       │ │
 │  └─────────────┬───────────────────────────────────────────────┘ │
 │                │ _get_provider()                                  │
 │  ┌─────────────▼───────────────────────────────────────────────┐ │
@@ -203,13 +207,35 @@ curl -X POST http://localhost:5555/api/airi/consciousness/stop
 
 启动后，界面右下角出现 **🧠 认知仿真** 浮动气泡。
 
-### 标签页
+### 标签页 (7 个)
 
 | 标签       | 功能                                    |
 | ---------- | --------------------------------------- |
 | 📡 实时流   | Layer 0-9 认知事件（颜色编码 + 时间戳） |
-| 🪪 角色状态 | 人格、四层心理、目标进度                |
+| 🪪 身份卡   | 人格雷达图、四层心理、目标进度          |
+| 🔬 Prompt  | 🆕 增强 prompt 分段透视, ⭐高亮记忆区段   |
+| 🧠 记忆     | 🆕 向量索引+JSONL 双源, 8种类型chips筛选  |
+| 💬 对话     | 🆕 JSONL 对话历史回放, 最新在前          |
+| 🎭 角色     | 角色配置编辑 (大五/四层心理/禁忌行为)   |
 | ⚙️ 设置     | 桥接地址、角色 ID、连接控制             |
+
+### 8 种记忆类型
+
+| 类型 | 图标 | 颜色 | 匹配规则 |
+|------|------|------|----------|
+| 对话记录 | 💬 | 蓝色 | `用户:` / `回复:` 开头 |
+| 用户姓名 | 👤 | 绿色 | `用户姓名:` 开头 |
+| 用户偏好 | ❤️ | 粉色 | `用户偏好:` 开头 |
+| 用户事件 | 📅 | 黄色 | `用户事件:` 开头 |
+| 用户情绪 | 😊 | 橙色 | `用户情绪:` 开头 |
+| 用户意图 | 🎯 | 青色 | `用户意图:` 开头 |
+| 用户职业 | 💼 | 紫色 | `用户职业:` 开头 |
+| LLM推理  | 🤖 | 紫虚线 | `[LLM推理]` 开头 |
+
+### Dashboard 自动刷新
+
+对话完成后，当前活跃的 Dashboard Tab (Prompt/记忆/对话) 会在 ~1.5 秒内自动刷新。
+触发条件: WebSocket 检测到 L9 "对话反馈" 或 L6 "prompt" 事件。
 
 ### Layer 颜色编码
 
@@ -261,9 +287,9 @@ curl -X POST http://localhost:5555/api/airi/consciousness/stop
 
 | 文件                  | 位置                                 | 说明              |
 | --------------------- | ------------------------------------ | ----------------- |
-| `narrative-bridge.ts` | `stage-ui/src/stores/modules/`       | Pinia 通信 Store  |
-| `CognitiveBubble.vue` | `stage-ui/src/components/cognitive/` | 认知可视化组件    |
-| `chat.ts`             | `stage-ui/src/stores/`               | 对话管道 (已集成) |
+| `narrative-bridge.ts` | `stage-ui/src/stores/modules/`       | Pinia 通信 Store (含 5 个 Dashboard API) |
+| `CognitiveBubble.vue` | `stage-ui/src/components/cognitive/` | 认知可视化组件 (v3.0, 7 Tab)             |
+| `chat.ts`             | `stage-ui/src/stores/`               | 对话管道 (已集成)                        |
 
 ### 脚本
 
@@ -283,5 +309,8 @@ curl -X POST http://localhost:5555/api/airi/consciousness/stop
 | 天气数据为空             | wttr.in 被墙/超时          | 正常降级，不影响功能                               |
 | 增强 prompt 未注入       | narrative-bridge 未启用    | 气泡设置中启用                                     |
 | LLM 无回复               | API key 失效               | 检查 Kimi key 和 model                             |
+| Provider metadata not found | LLM Provider 未配置     | 在 AIRI 设置中添加 OpenAI Compatible Provider      |
 | 认知事件为空             | NE 模块未初始化            | CPI 自动降级到 Mock                                |
 | WebSocket 断开           | 网络不稳或服务重启         | 自动重连 (5 秒间隔)                                |
+| 记忆浏览器 0 条          | 后端未重启/角色ID不匹配    | 重启后端 + 检查设置中角色ID                        |
+| Dashboard 不自动刷新     | 前端缓存旧代码             | 刷新浏览器页面 (Cmd+Shift+R)                       |

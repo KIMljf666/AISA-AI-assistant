@@ -19,6 +19,7 @@ import { toast, Toaster } from 'vue-sonner'
 
 import PerformanceOverlay from './components/Devtools/PerformanceOverlay.vue'
 import CognitiveBubble from '@proj-airi/stage-ui/components/cognitive/CognitiveBubble.vue'
+import CognitivePipeline from '@proj-airi/stage-ui/components/cognitive/CognitivePipeline.vue'
 
 import { usePWAStore } from './stores/pwa'
 
@@ -132,6 +133,7 @@ function handleSetupSkipped() {
 
   <PerformanceOverlay />
   <CognitiveBubble />
+  <CognitivePipeline />
 </template>
 
 <style>
