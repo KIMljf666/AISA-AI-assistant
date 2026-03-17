@@ -12,14 +12,14 @@
 
 <style scoped>
 .chat-container-resizable {
-  resize: horizontal;
+  resize: vertical;
   overflow: auto;
-  min-width: 260px;
+  min-height: 200px;
 }
 /* 🆕 Sprint 7: 调整大小手柄样式 */
 .chat-container-resizable::-webkit-resizer {
   background: linear-gradient(135deg, transparent 60%, rgba(99, 102, 241, 0.3) 60%, rgba(99, 102, 241, 0.3) 75%, transparent 75%);
   border-radius: 0 0 12px 0;
-  cursor: ew-resize;
+  cursor: ns-resize;
 }
 </style>
