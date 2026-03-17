@@ -774,8 +774,6 @@ onUnmounted(() => {
   right: 16px;
   width: 380px;
   max-height: 520px;
-  min-width: 280px;
-  min-height: 200px;
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
@@ -790,7 +788,6 @@ onUnmounted(() => {
   font-size: 13px;
   color: #1e293b;
   font-weight: 500;
-  resize: both;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
