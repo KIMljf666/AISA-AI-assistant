@@ -16,8 +16,17 @@ export const useOnboardingStore = defineStore('onboarding', () => {
 
   // Check if any essential provider is configured
   const hasEssentialProviderConfigured = computed(() => {
-    const essentialProviders = ['openai', 'anthropic', 'google-generative-ai', 'openrouter-ai', 'ollama', 'deepseek', 'openai-compatible']
+    const essentialProviders = ['openai', 'anthropic', 'google-generative-ai', 'openrouter-ai', 'ollama', 'deepseek', 'openai-compatible', 'groq']
     return essentialProviders.some(providerId => providersStore.configuredProviders[providerId])
+  })
+
+  // 🆕 Sprint 7 Fix 5: Check if consciousness system is active (external LLM)
+  const hasConsciousnessConnection = computed(() => {
+    try {
+      return localStorage.getItem('consciousness/connected') === 'true'
+        || localStorage.getItem('onboarding/completed') === 'true'
+    }
+    catch { return false }
   })
 
   // Check if first-time setup should be shown
@@ -25,6 +34,12 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     // Don't show if already completed or skipped
     if (hasCompletedSetup.value || hasSkippedSetup.value) {
       console.warn('Onboarding already completed or skipped')
+      return false
+    }
+
+    // Don't show if consciousness system is connected (external backend)
+    if (hasConsciousnessConnection.value) {
+      console.warn('Consciousness system connected, no onboarding needed')
       return false
     }
 

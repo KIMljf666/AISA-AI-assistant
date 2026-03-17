@@ -772,12 +772,14 @@ onUnmounted(() => {
   position: fixed;
   bottom: 16px;
   right: 16px;
-  width: 480px;
-  max-height: 720px;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 380px;
+  max-height: 520px;
+  min-width: 280px;
+  min-height: 200px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   z-index: 9999;
@@ -786,9 +788,10 @@ onUnmounted(() => {
   overflow: hidden;
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 13px;
-  color: #e2e8f0;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1e293b;
+  font-weight: 500;
+  resize: both;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .cognitive-bubble.dragging { transition: none; opacity: 0.95; cursor: grabbing; }

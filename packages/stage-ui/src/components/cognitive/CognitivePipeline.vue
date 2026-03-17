@@ -428,20 +428,20 @@ const statusDot = computed(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 24px;
-  color: #e0e0f0;
+  color: #1e293b;
   font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .pipeline-toggle:hover {
-  border-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.30);
   box-shadow: 0 4px 24px rgba(99, 102, 241, 0.15);
   transform: translateY(-2px);
 }
@@ -471,13 +471,13 @@ const statusDot = computed(() => {
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  color: #e0e0f0;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #1e293b;
   font-family: 'Inter', -apple-system, sans-serif;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  font-weight: 500;
 }
 .pipeline-sidebar {
   left: 0;
@@ -513,7 +513,7 @@ const statusDot = computed(() => {
 }
 .header-icon { font-size: 20px; }
 .header-title { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
-.status-text { font-size: 12px; color: #999; }
+.status-text { font-size: 12px; color: #64748b; }
 
 .header-actions {
   display: flex;
@@ -524,14 +524,14 @@ const statusDot = computed(() => {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 6px;
-  color: #aaa;
+  color: #475569;
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s;
 }
 .action-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: #eee;
+  color: #1e293b;
 }
 .close-btn { font-size: 14px; padding: 4px 8px; }
 
@@ -553,11 +553,11 @@ const statusDot = computed(() => {
   align-items: center;
   justify-content: center;
   height: 200px;
-  color: #666;
+  color: #94a3b8;
 }
 .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
 .empty-state p { margin: 4px 0; }
-.empty-hint { font-size: 12px; color: #555; }
+.empty-hint { font-size: 12px; color: #94a3b8; }
 
 /* ── 时间线 ── */
 .timeline {
@@ -575,9 +575,17 @@ const statusDot = computed(() => {
 }
 .timeline-card.card-cognitive { cursor: pointer; }
 .timeline-card.card-new {
-  animation: card-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: card-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* 🆕 Fix 6: 增强卡片入场效果 — 发光边框脉冲 */
+.timeline-card.card-new .card-body {
+  animation: card-glow 1.2s ease-out;
+}
+@keyframes card-glow {
+  0% { box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.5); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
 @keyframes card-enter {
   from { opacity: 0; transform: translateY(12px) scale(0.97); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -595,15 +603,25 @@ const statusDot = computed(() => {
 .connector-line {
   width: 2px;
   flex: 1;
-  background: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.3), rgba(255, 255, 255, 0.08));
   min-height: 20px;
+  position: relative;
+  overflow: hidden;
 }
-.connector-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3);
+/* 🆕 Fix 6: 意识流流动动画 — 数据流线 */
+.connector-line::after {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, rgba(99, 102, 241, 0.6), transparent);
+  animation: flow-pulse 2.5s ease-in-out infinite;
+}
+@keyframes flow-pulse {
+  0% { top: -100%; }
+  100% { top: 200%; }
 }
 .user-dot { background: #60a5fa !important; box-shadow: 0 0 8px rgba(96, 165, 250, 0.4); }
 .airi-dot { background: #f472b6 !important; box-shadow: 0 0 8px rgba(244, 114, 182, 0.4); }
@@ -646,13 +664,13 @@ const statusDot = computed(() => {
 .user-label { color: #60a5fa !important; }
 .airi-label { color: #f472b6 !important; }
 .arena-label { color: #f59e0b !important; }
-.card-time { margin-left: auto; font-size: 11px; color: #666; font-family: 'JetBrains Mono', monospace; }
+.card-time { margin-left: auto; font-size: 11px; color: #94a3b8; font-family: 'JetBrains Mono', monospace; }
 .expand-hint { font-size: 10px; color: #555; margin-left: 4px; }
 
 .card-content {
   font-size: 13px;
   line-height: 1.5;
-  color: #ccc;
+  color: #475569;
   word-break: break-word;
   white-space: pre-wrap;
 }
