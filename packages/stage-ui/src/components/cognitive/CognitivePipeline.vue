@@ -65,7 +65,7 @@ const EVENT_ICONS: Record<string, string> = {
 // ── 瀑布流数据处理 ──
 interface PipelineCard {
   id: string
-  type: 'cognitive' | 'user_input' | 'airi_reply' | 'cycle_separator'
+  type: 'cognitive' | 'user_input' | 'airi_reply' | 'cycle_separator' | 'arena_event'
   layer?: number
   layerLabel?: string
   layerIcon?: string
@@ -102,6 +102,10 @@ function eventToCard(event: any): PipelineCard {
   // 检测主动对话
   if (event.event_type === 'proactive_dialogue') {
     type = 'airi_reply'
+  }
+  // 检测跨产品事件 (竞技场)
+  if (event.metadata?.cross_product || event.metadata?.source === 'genesis_arena') {
+    type = 'arena_event'
   }
 
   return {
@@ -377,6 +381,24 @@ const statusDot = computed(() => {
                   </div>
                 </div>
               </template>
+
+              <!-- 竞技场事件卡片 -->
+              <template v-else-if="card.type === 'arena_event'">
+                <div class="card-connector">
+                  <div class="connector-line" />
+                  <div class="connector-dot arena-dot" />
+                </div>
+                <div class="card-body card-arena">
+                  <div class="card-head">
+                    <span class="card-icon">⚔️</span>
+                    <span class="card-label arena-label">竞技场</span>
+                    <span class="card-time">{{ card.timestamp }}</span>
+                  </div>
+                  <div class="card-content">
+                    {{ card.content }}
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -581,6 +603,7 @@ const statusDot = computed(() => {
 }
 .user-dot { background: #60a5fa !important; box-shadow: 0 0 8px rgba(96, 165, 250, 0.4); }
 .airi-dot { background: #f472b6 !important; box-shadow: 0 0 8px rgba(244, 114, 182, 0.4); }
+.arena-dot { background: #f59e0b !important; box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
 
 /* ── 卡片主体 ── */
 .card-body {
@@ -603,6 +626,10 @@ const statusDot = computed(() => {
   border-left-color: #f472b6 !important;
   background: rgba(244, 114, 182, 0.06);
 }
+.card-arena {
+  border-left-color: #f59e0b !important;
+  background: rgba(245, 158, 11, 0.06);
+}
 
 .card-head {
   display: flex;
@@ -614,6 +641,7 @@ const statusDot = computed(() => {
 .card-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .user-label { color: #60a5fa !important; }
 .airi-label { color: #f472b6 !important; }
+.arena-label { color: #f59e0b !important; }
 .card-time { margin-left: auto; font-size: 11px; color: #666; font-family: 'JetBrains Mono', monospace; }
 .expand-hint { font-size: 10px; color: #555; margin-left: 4px; }
 
