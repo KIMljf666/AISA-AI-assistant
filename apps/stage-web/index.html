@@ -80,6 +80,18 @@
           document.head.appendChild(style)
           console.log('🎬 OBS Mode enabled — transparent background for overlay')
         }
+
+        // 🆕 Sprint 7.1 Fix 5: 意识流后端自动跳过 Onboarding
+        // 检测意识流后端连接 — 如果后端运行中则自动完成 onboarding
+        if (!localStorage.getItem('onboarding/completed') || localStorage.getItem('onboarding/completed') === 'false') {
+          fetch('http://localhost:8000/api/consciousness/status', { method: 'GET', signal: AbortSignal.timeout(2000) })
+            .then(function(r) { if (r.ok) {
+              localStorage.setItem('onboarding/completed', 'true')
+              localStorage.setItem('consciousness/connected', 'true')
+              console.log('🧠 意识流后端已连接 — 自动跳过 Onboarding')
+            }})
+            .catch(function() { /* 后端未运行, 保持原有 onboarding 流程 */ })
+        }
       })()
     </script>
     <div id="app"></div>
