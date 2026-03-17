@@ -51,6 +51,37 @@
     <script src="/assets/js/CubismSdkForWeb-5-r.3/Core/live2dcubismcore.min.js"></script>
   </head>
   <body class="font-sans">
+    <!-- 🆕 Sprint 7 Phase B: OBS 叠加模式 — ?obs=1 启用透明背景 -->
+    <script>
+      ;(function () {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('obs') === '1') {
+          document.documentElement.classList.add('obs-mode')
+          // OBS 浏览器源需要透明背景
+          const style = document.createElement('style')
+          style.textContent = `
+            .obs-mode, .obs-mode body {
+              background: transparent !important;
+              background-color: transparent !important;
+            }
+            .obs-mode .page-header,
+            .obs-mode .top-bar,
+            .obs-mode nav,
+            .obs-mode [class*="navbar"],
+            .obs-mode [class*="header-bar"],
+            .obs-mode [class*="navigation"] {
+              display: none !important;
+            }
+            .obs-mode .main-content,
+            .obs-mode #app {
+              background: transparent !important;
+            }
+          `
+          document.head.appendChild(style)
+          console.log('🎬 OBS Mode enabled — transparent background for overlay')
+        }
+      })()
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
     <noscript> This website requires JavaScript to function properly. Please enable JavaScript to continue. </noscript>

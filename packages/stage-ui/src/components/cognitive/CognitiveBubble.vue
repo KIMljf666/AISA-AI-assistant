@@ -774,11 +774,12 @@ onUnmounted(() => {
   right: 16px;
   width: 480px;
   max-height: 720px;
-  background: rgba(15, 15, 25, 0.92);
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 60px rgba(139, 92, 246, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -786,6 +787,7 @@ onUnmounted(() => {
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 13px;
   color: #e2e8f0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -795,8 +797,8 @@ onUnmounted(() => {
 .bubble-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px; cursor: grab;
-  background: rgba(139, 92, 246, 0.1);
-  border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   user-select: none;
 }
 .bubble-header:active { cursor: grabbing; }
@@ -816,13 +818,13 @@ onUnmounted(() => {
 .collapse-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 12px; padding: 0; }
 .bubble-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-.tab-bar { display: flex; gap: 2px; padding: 6px 8px; background: rgba(0, 0, 0, 0.2); }
+.tab-bar { display: flex; gap: 2px; padding: 6px 8px; background: rgba(255, 255, 255, 0.03); }
 .tab-btn {
   flex: 1; padding: 6px 4px; font-size: 11px;
   background: transparent; border: none; color: #94a3b8;
   border-radius: 6px; cursor: pointer; transition: all 0.2s;
 }
-.tab-btn.active { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; }
+.tab-btn.active { background: rgba(139, 92, 246, 0.12); color: #c4b5fd; }
 .tab-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.05); }
 
 /* ━━━━━━━━━ 实时流 ━━━━━━━━━ */

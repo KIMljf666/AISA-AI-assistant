@@ -428,19 +428,21 @@ const statusDot = computed(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 18px;
-  background: linear-gradient(135deg, rgba(30, 30, 50, 0.92), rgba(20, 20, 40, 0.95));
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(100, 100, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 24px;
   color: #e0e0f0;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .pipeline-toggle:hover {
-  border-color: rgba(130, 130, 255, 0.5);
-  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.3);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.15);
   transform: translateY(-2px);
 }
 .toggle-icon { font-size: 18px; }
@@ -469,18 +471,20 @@ const statusDot = computed(() => {
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(15, 15, 25, 0.96), rgba(10, 10, 20, 0.98));
+  background: rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(100, 100, 255, 0.15);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   color: #e0e0f0;
   font-family: 'Inter', -apple-system, sans-serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .pipeline-sidebar {
   left: 0;
   top: 0;
   bottom: 0;
   width: 420px;
-  border-right: 1px solid rgba(100, 100, 255, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 0;
 }
 .pipeline-fullscreen {
@@ -499,7 +503,7 @@ const statusDot = computed(() => {
   justify-content: space-between;
   align-items: center;
   padding: 14px 18px;
-  border-bottom: 1px solid rgba(100, 100, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
 }
 .header-left {
@@ -540,7 +544,7 @@ const statusDot = computed(() => {
 }
 .pipeline-scroll::-webkit-scrollbar { width: 4px; }
 .pipeline-scroll::-webkit-scrollbar-track { background: transparent; }
-.pipeline-scroll::-webkit-scrollbar-thumb { background: rgba(100, 100, 255, 0.3); border-radius: 2px; }
+.pipeline-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 2px; }
 
 /* ── 空状态 ── */
 .empty-state {
@@ -591,7 +595,7 @@ const statusDot = computed(() => {
 .connector-line {
   width: 2px;
   flex: 1;
-  background: rgba(100, 100, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
   min-height: 20px;
 }
 .connector-dot {
@@ -693,7 +697,7 @@ const statusDot = computed(() => {
   justify-content: space-between;
   align-items: center;
   padding: 8px 18px;
-  border-top: 1px solid rgba(100, 100, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 12px;
   color: #888;
   flex-shrink: 0;
